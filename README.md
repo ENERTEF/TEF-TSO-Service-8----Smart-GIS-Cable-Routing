@@ -10,115 +10,164 @@
 
 # 1. Business Context & Definitions
 
-Elektro Gorenjska infrastructure planners manually determine cable routes using QGIS tools. They balance criteria across layers including network development areas, connection capacities, networks, route sections with high/medium/low voltage poles and manholes, schematics for stations and separation points, parcels, and environment details such as company borders, local control areas, municipalities, addresses, streets, orthophoto grids, and LiDAR grids.
+Elektro Gorenjska infrastructure planners manually determine cable routes using QGIS tools. They balance criteria across layers including:
 
-This process is time-consuming due to multiple factors including future infrastructure plans, terrain stability, and parcel approvals.
+- network development areas  
+- connection capacities  
+- networks  
+- route sections with high/medium/low voltage poles and manholes  
+- schematics for stations and separation points  
+- parcels  
+- environment details like company borders, local control areas, municipalities, addresses, streets, orthophoto grids, and LiDAR grids  
+
+This process is time-consuming due to multiple factors like:
+
+- future infrastructure plans  
+- terrain stability  
+- parcel approvals  
 
 ## Key Terms
 
 | Term | Definition |
-|---|---|
+|-----|-----------|
 | GIS | Geographic Information System holding spatial layers for network, routes, parcels, schematics, and environment data |
-| GIS layers | Separate map overlays representing different spatial data types (networks, parcels, streets, imagery, etc.) |
-| Optimization algorithm | Computational method to evaluate multiple routes and minimize/balance defined costs |
+| GIS layers | Separate map overlays where each represents one type of spatial information (networks, parcels, streets, imagery, etc.) |
+| Optimization algorithm | Computational method evaluating routes and minimizing/balancing costs |
 | AI image recognition | Processing orthophoto and LiDAR data to identify terrain features such as instability or obstacles |
 | Lowest-cost route | Path using existing infrastructure with zero additional construction cost |
 | Parcel crossing | Path segment over private land parcels, minimized and centered for easier approvals |
 
-## 1.1 Elektro Gorenjska (Network Owner) Context
+---
 
-This service targets Elektro Gorenjska’s full distribution network for planning:
-- New cable routes  
-- Rerouting existing cable sections  
+## 1.1 Elektro Gorenjska (network owner) Context
 
-Initial scope:
-- Primarily MV and LV networks  
-- Small HV sections  
+This service targets Elektro Gorenjska DSO’s full distribution network for:
 
-### Objectives
+- planning new cable routes  
+- rerouting existing cable sections  
 
-- Reduce planning time by **≥50%**  
-- Provide structured cost overview for candidate routes  
+Scope:
+
+- primarily medium-voltage (MV) and low-voltage (LV) networks  
+- small sections of high-voltage (HV) network  
+
+### Primary goals
+
+- Reduce planning time by **at least 50%**
+- Provide structured cost overview for candidate routes
 
 ### Current baseline
-- Max **3 projects/week/planner**
 
-### Requirements
+- Maximum of **3 projects per week per planner (5 working days)**
 
-- Estimate deviation from lowest achievable cost  
-- Use standardized internal unit costs (e.g., parcel crossing, excavation)  
-- Evaluate trade-offs (longer route vs expensive segments)  
+### Cost evaluation requirement
 
-### Current manual workflow constraints
+The service should estimate:
 
-- Avoid water crossings  
-- Prefer routing between parcels  
-- Stay near roads but avoid excavation  
-- Handle incomplete terrain data  
-- Consider constraints not fully captured in GIS  
+- how far each candidate route is from the **lowest achievable cost**
+- using standardized unit costs from internal catalogues (e.g. parcel crossings, excavation, construction)
+- comparing trade-offs such as:
+  - longer detours vs expensive segments  
 
-### Service capabilities
+### Current manual workflow
 
-- Generate lowest-cost route  
-- Provide alternative routes  
-- Allow user editing (no real-time rerouting)  
+Planners manually:
+
+- combine multiple GIS layers  
+- avoid water crossings  
+- prefer routes between parcels  
+- stay near roads but avoid excavation  
+- consider public roads (mapped) vs private roads (not mapped)  
+- account for terrain not fully captured in GIS  
+
+### Expected system behavior
+
+- propose an initial lowest-cost route  
+- generate alternative routes  
+- allow user editing  
+- no real-time outage rerouting  
 
 ### AI component
 
-- Analyze orthophoto + LiDAR  
-- Detect obstacles (e.g., boulders not in GIS)  
+Machine vision should:
 
-### Data & integration
+- analyze orthophoto + LiDAR  
+- detect obstacles (e.g. boulders missing in GIS layers)  
 
-- Standard GIS formats (shapefiles)  
-- Imagery similar to PISO (10–50 cm orthophoto resolution)  
-- Delivery as **QGIS plugin**  
+### Data & delivery
+
+- GIS export formats (shapefiles)  
+- imagery comparable to Slovenian GIS systems (e.g. PISO):
+  - orthophoto 50 cm resolution  
+  - 10 cm / 50 cm variants  
+
+- preferred delivery:
+  - **QGIS plugin**
+  - outputs adapted for professional GIS workflows  
 
 ---
 
 # 2. Problem Statement
 
-Manual routing is constrained by:
+Manual cable routing requires optimization across:
 
-- Multi-layer geospatial optimization  
-- Engineering, regulatory, economic limits  
-- Limited planner capacity  
+- geospatial constraints  
+- engineering rules  
+- economic considerations  
+- regulatory limits  
+
+### Current limitation
+
+- max 3 projects/week per planner → bottleneck  
 
 ### Service objective
 
-Automatically generate feasible route candidates between endpoints:
-- Distribution cabinet → transformer station  
-- Network point → network point  
+Automate generation of route candidates between endpoints:
+
+- cabinet → transformer station  
+- network point → network point  
 
 ### Optimization must include
 
-- Construction accessibility  
-- Land use constraints  
-- Terrain suitability  
-- Geometric rules  
-- Capacity matching  
-- Overlap avoidance  
+- construction accessibility (prefer roadside verges)  
+- land use constraints (minimize parcel crossings, avoid water)  
+- terrain suitability (slopes, AI-detected obstacles)  
+- geometric rules:
+  - minimum bend radii  
+  - radial feeder layout  
+- capacity matching (cable sizing models)  
+- overlap avoidance (feeder zones, multi-supplier houses)  
 
-### Technical approach
+### Voltage-specific complexity
 
-- GIS-integrated optimization (A*, ACO, least-cost path)  
-- Multi-objective optimization (cost vs length vs risk)  
-- Pareto-optimal routes  
+- LV: most constrained (dense obstacles)  
+- MV/HV: thicker cable constraints  
+- HV: additional geometric rules (larger turn radii)  
+
+### Technical solution
+
+- GIS-integrated optimization algorithms:
+  - least-cost path  
+  - A*  
+  - Ant Colony Optimization (ACO)  
+
+- multi-objective optimization (length vs cost vs risk)  
+- Pareto-optimal route generation  
 
 ### AI component
 
-- Detect obstacles (≥90% accuracy for major obstacles >1m)  
-- Flag uncertain cases  
+- detect obstacles with ≥90% accuracy (e.g. boulders >1m)  
+- flag uncertain detections  
 
-### Outputs
+### Output priorities
 
-- Lowest-cost route (existing infrastructure priority)  
-- Ranked alternative routes  
+1. lowest-cost route (existing infrastructure first)  
+2. ranked alternatives  
 
-### Prototype scope
+### Prototype
 
-- Internal testing on real projects  
-- Evaluation vs manual planning  
+- tested on real Elektro Gorenjska projects  
+- evaluated vs manual planning (time, cost, constraints)  
 
 ---
 
@@ -126,34 +175,37 @@ Automatically generate feasible route candidates between endpoints:
 
 Core data sources:
 
-- Internal GIS system (shapefiles `.shp`)  
-- Public/internal imagery (orthophoto, LiDAR)  
+- internal GIS system (shapefiles `.shp`)  
+- imagery layers (public + internal)  
 
-### Imagery standards
+### Imagery sources
 
-- DOF010 / DOF050 (10–50 cm resolution)  
+- orthophoto (DOF010 / DOF050, 10–50 cm resolution)  
 - LiDAR grids  
-- TTN5/TTN10 maps  
-- DTK25/TK50  
-- PK250 overview maps  
+- topographic maps:
+  - TTN5 / TTN10  
+  - DTK25 / TK50  
+  - PK250  
 
 ---
 
 ## 3.1 GIS Layers Dictionary
 
 | Layer Group | Specific Layers | Description | Data Type | Example Use |
-|---|---|---|---|---|
+|------------|----------------|------------|-----------|------------|
 | Network | Network, cable widths | Existing cables and sections | Line/Polygon | Prioritize for lowest-cost |
 | Routes | Route sections, HV/MV/LV poles, manholes | Infrastructure points | Point/Line | Extend routes |
-| Schematics | Stations, separation points, substations, joints | Network diagram elements | Point/Line | Endpoint candidates |
-| Environment | Borders, municipalities, streets, orthophoto, LiDAR | Base mapping and terrain | Polygon/Line/Raster | Alignment |
-| Other | Parcels, development, capacity, HC3 | Land use and planning | Polygon/Point | Avoid/prioritize |
+| Schematics | Station labels, separation points, HV/MV sections, substations, joints | Network diagram elements | Point/Line | Endpoint candidates |
+| Environment | Company borders, control areas, municipalities, addresses, streets, orthophoto, LiDAR | Mapping and terrain | Polygon/Line/Raster | Alignment, terrain |
+| Other | Parcels, development plans, capacity, HC3 | Land use and planning | Polygon/Point | Avoid/prioritize |
 
 ### Notes
 
-- Some attributes may exist but are undefined  
-- LV feeders may serve ~100 consumers (to confirm)  
-- Validation via synthetic GIS scenarios + expert review  
+- Attributes like parcel ownership or road type may exist but are undefined  
+- LV feeders estimated ~100 consumers (to confirm)  
+- Validation uses:
+  - synthetic GIS scenarios  
+  - expert review  
 
 ---
 
@@ -161,74 +213,84 @@ Core data sources:
 
 ## Execution
 
-- On-demand route optimization per project  
+- On-demand per project  
 - Uses current GIS snapshot  
 
 ## Temporal Scope
 
-- Current GIS + imagery only  
-- No historical time series  
+- No historical data required  
+- Includes future planning layers  
 
 ## Update Frequency
 
-- Triggered by planner inputs  
-- Instant recalculation on parameter change  
+- Triggered by planner input  
+- Instant recalculation  
 
 ## Constraints
 
-- Route length: <10 km  
-- Nodes: <100  
+- route length <10 km  
+- <100 nodes  
 
 ---
 
 ## Output Format
 
-Each project returns **two routes**:
+Each project returns:
 
 ### 1. Lowest-cost route
+
 - Minimum total cost  
-- May be €0 (existing infrastructure)  
+- May be €0 (existing infrastructure) or e.g. €100k  
 
 ### 2. Optimal route
-- Balanced cost/length/terrain  
-- Adjustable weights:
-  - Parcels (e.g., 40%)  
-  - Length (30%)  
-  - Terrain (30%)  
+
+- Balanced cost/criteria  
+- adjustable weights:
+  - parcels (40%)  
+  - length (30%)  
+  - terrain (30%)  
 
 ### Additional features
 
-- Granularity slider (5–50 m merge tolerance)  
-- Adaptive smoothing (urban vs rural)  
-- Interactive editor:
-  - Snap to layers  
-  - Drag/split nodes  
-  - Auto-update costs  
+- granularity slider:
+  - merge tolerance 5–50m  
+  - straightens path  
+  - adaptive behavior:
+    - finer urban  
+    - coarser rural  
 
-### Outputs
+- interactive editor:
+  - snapping  
+  - dragging  
+  - splitting nodes  
+  - auto cost updates  
 
-- QGIS layers  
-- Editable geometries/shapefiles  
+### Output format
 
-### Cost parameters
+- QGIS plugin layers  
+- editable shapefiles  
 
-- Imported via CSV/Excel  
-- Example: €2000 per parcel crossing  
+### Cost input
+
+- CSV / Excel import  
+- example:
+  - €2000 per parcel crossing  
 
 ### Optional (future)
 
-- Color-coded routes  
-- Cost visualization tables  
+- color-coded paths  
+- cost visualization tables  
 
 ---
 
 # 5. Evaluation Protocols & Metrics
 
-Evaluation verifies:
-- Faster route generation  
-- Equal or lower cost vs manual  
+Goal:
 
-(after user training)
+- faster route generation  
+- equal or lower cost vs manual  
+
+(after training period)
 
 ---
 
@@ -236,33 +298,34 @@ Evaluation verifies:
 
 - 30 synthetic scenarios  
 - 10 anonymized real projects  
-- ~5 planners  
+- 5 planners  
 
 Requirements:
-- Training period before evaluation  
-- Full reproducibility (inputs, parameters, outputs)  
-- No future data leakage  
+
+- training period before evaluation  
+- reproducibility (inputs, parameters, outputs)  
+- no future data leakage  
 
 ---
 
 ## 5.2 Data Gaps and Exceptions
 
 | Case | Handling |
-|---|---|
+|-----|--------|
 | Missing GIS layers | Exclude from metrics, flag |
-| No LiDAR | Use orthophoto fallback |
-| Extreme complexity (>100 nodes) | Route to expert |
-| No historical routes | Use synthetic + expert validation |
+| Missing LiDAR | fallback to orthophoto |
+| Extreme cases (>100 nodes) | escalate to expert |
+| No historical routes | use synthetic + expert validation |
 
 ---
 
 ## 5.3 Service Evaluation Metrics & KPIs
 
 | KPI | Formula/Description | Target |
-|---|---|---|
-| Time Savings % | (manual − tool) / manual × 100 | ≥50% |
-| Cost Accuracy | Avg % difference vs manual | ≤10% underrun |
-| Task Throughput | Projects/week/person | ≥6 |
+|----|-------------------|--------|
+| Time Savings % | (manual time – tool time) / manual time × 100 | ≥50% |
+| Cost Accuracy | Avg % difference vs manual quote | ≤10% underrun |
+| Task Throughput | Projects/person/week | ≥6 |
 | Expert Acceptance | % planners preferring tool | ≥80% |
 | Route Feasibility | % routes usable without major edits | ≥90% |
 
@@ -270,7 +333,7 @@ Requirements:
 
 # 6. Deliverables & Submissions
 
-Provider must deliver reports + technical artefacts.
+Provider delivers reports + technical artefacts.
 
 ---
 
@@ -279,62 +342,70 @@ Provider must deliver reports + technical artefacts.
 ### 1. Pre-Service Deliverable – Service Design Setup Report
 
 Includes:
-- Optimization algorithm  
-- Cost model  
-- Granularity logic  
-- Data requirements (shapefiles, CSV)  
-- System architecture (QGIS plugin)  
-- Integration plan  
-- Operational procedures  
-- Pilot schedule  
+
+- optimization algorithm  
+- cost model  
+- granularity logic  
+- data requirements (shapefiles, CSV)  
+- system architecture (QGIS plugin)  
+- integration plan  
+- operational procedures  
+- pilot schedule  
 
 ---
 
 ### 2. Intermediate Deliverable – Interim Performance Report (~6 weeks)
 
 Includes:
-- Early testing results  
-- Synthetic + staff trials  
-- KPI evaluation  
-- Data coverage  
-- Issues and improvements  
+
+- early testing results  
+- synthetic + staff trials  
+- KPI performance  
+- data coverage  
+- issues and adaptations  
 
 ---
 
 ### 3. Final Deliverable – Final Evaluation Report (~3 months)
 
 Includes:
-- Full results (30 synthetic + 10 real)  
-- 5-planner evaluation  
-- Metrics:
-  - ≥30% time savings  
-  - ≥80% acceptance  
-- Insights  
-- Improvements  
-- Scaling recommendations  
+
+- full results (30 synthetic + 10 real projects)  
+- planner trial (5 planners)  
+- metrics:
+  - time savings ≥30%  
+  - acceptance ≥80%  
+
+- insights  
+- improvements  
+- scaling recommendations  
 
 ---
 
 ## 6.2 Technical Specifications & Submissions
 
 ### Plugin Artefacts
-- QGIS plugin package  
+
+- QGIS plugin  
 - Git repository  
 - Dockerfile  
-- Installation guide  
+- installation guide  
 
 ### Configuration & Versioning
+
 - CSV cost templates  
-- Model parameters  
-- Versioning  
-- Handover procedures  
+- model parameters  
+- versioning  
+- handover procedures  
 
 ### User Documentation
-- Input/output guide  
-- Editor usage  
+
+- input/output instructions  
+- editor usage  
 
 ### Training Materials
-- Video recordings  
-- Training scripts  
+
+- video recordings  
+- onboarding scripts  
 
 ---
